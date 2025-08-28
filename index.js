@@ -38,7 +38,12 @@ async function run() {
       .db("JobPortal")
       .collection("job_application");
     app.get("/jobs", async (req, res) => {
-      const jobsFind = await jobCollection.find().toArray();
+      const email = req.query.email;
+      let query = {};
+      if (email) {
+        query = { hr_email: email };
+      }
+      const jobsFind = await jobCollection.find(query).toArray();
       res.send(jobsFind);
     });
 
@@ -50,6 +55,11 @@ async function run() {
       res.send(getJobById);
     });
 
+    app.post("/jobs", async (req, res) => {
+      const newJob = req.body;
+      const result = await jobCollection.insertOne(newJob);
+      res.send(result);
+    });
     // Job Application Apis
     // get job application  by id
     app.get("/job-application", async (req, res) => {
@@ -73,12 +83,32 @@ async function run() {
       }
       res.send(result);
     });
+    app.get("/job-application/jobs/:id", async (req, res) => {
+      const jobId = req.params.id;
+      const query = { job_id: jobId };
+      const result = await jobApplyCollection.find(query).toArray();
+      res.send(result);
+    });
 
     // post job application
     app.post("/job-application", async (req, res) => {
       const application = req.body;
       const result = await jobApplyCollection.insertOne(application);
       // console.log(result);
+      res.send(result);
+    });
+
+    app.patch("/job-application/:id", async (req, res) => {
+      const application = req.body;
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const update = {
+        $set: {
+          status: application.status,
+        },
+      };
+
+      const result = await jobApplyCollection.updateOne(query, update);
       res.send(result);
     });
     // Send a ping to confirm a successful connection
